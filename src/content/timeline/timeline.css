@@ -1,0 +1,77 @@
+#timeline {
+  position: relative;
+  box-sizing: border-box;
+  height: 50px;
+  background: white;
+  border-top: 1px solid #ccc;
+  padding-left: 50px;
+  padding-right: 50px;
+  user-select: none;
+}
+
+#timeline .markers {
+  position: relative;
+  box-sizing: border-box;
+  height: 50px;
+  cursor: col-resize;
+  user-select: none;
+}
+
+#timeline .study {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0px;
+  border-right: 1px solid #777;
+  opacity: 0.3;
+}
+
+#timeline .study.lower {
+  border-right-color: #00754c;
+}
+#timeline .study.higher {
+  border-right-color: #9e0b00;
+}
+
+#timeline .month {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: auto;
+  padding: 4px;
+  color: #555;
+  border-left: 1px solid #ccc;
+}
+
+#timeline .month:first-of-type {
+  border-left: none;
+}
+
+#timeline .marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-right: 3px solid #fc00f8;
+}
+
+#timeline button {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  width: 36px;
+  height: 36px;
+  outline: none;
+  border: 0px solid;
+  background: transparent;
+}
+
+#timeline .ytp-play-button {
+  fill: #fc00f8;
+  opacity: 0.85;
+}
+
+#timeline .ytp-play-button:hover {
+  cursor: pointer;
+  opacity: 1;
+}
