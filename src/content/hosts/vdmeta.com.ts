@@ -15,8 +15,12 @@ export const initialise = async (): Promise<void> => {
 
   const model = await init(getStudiesIncludedInAnalysis)
 
-  new ForestPlot($('#fig_plotdfp'))
-  new ForestPlot($('#fig_fps'))
+  new ForestPlot($('#fig_plotdfp'), {
+    title: 'All %s vitamin D COVID-19 treatment studies',
+  })
+  new ForestPlot($('#fig_fps'), {
+    title: 'All %s vitamin D COVID-19 sufficiency studies',
+  })
 
   const treatmentBarChart = new BarChart($('#fig_plotnlevels'))
   const treatmentStudies = treatmentBarChart.getStudies()
@@ -28,10 +32,12 @@ export const initialise = async (): Promise<void> => {
 
   new BarChart($('#fig_stageelp'))
 
-  const treatmentForest = new ForestPlot($('#fig_fp'))
+  const treatmentForest = new ForestPlot($('#fig_fp'), {
+    title: 'All %s vitamin D COVID-19 treatment studies',
+  })
   const groupedStudies = treatmentForest.groupedStudies
 
-  if (groupedStudies.length === 4) {
+  if (groupedStudies.length === 3) {
     const allTreatmentStudies = flatten(groupedStudies).sort(
       (a: Study, b: Study) => (a.date < b.date ? -1 : 1),
     )
@@ -43,6 +49,31 @@ export const initialise = async (): Promise<void> => {
       allTreatmentStudies,
     ])
   }
+
+  new ForestPlot($('#fig_fpp'), {
+    title: 'All %s vitamin D COVID-19 peer reviewed trials',
+  })
+  new ForestPlot($('#fig_fpr'), {
+    title: 'All %s vitamin D COVID-19 Randomized Controlled Trials',
+  })
+  new ForestPlot($('#fig_fpcd'), {
+    title: 'All %s calcifediol/calcitriol COVID-19 studies',
+  })
+  new ForestPlot($('#fig_fpcc'), {
+    title: 'All %s calcifediol COVID-19 studies',
+  })
+  new ForestPlot($('#fig_fpd'), {
+    title: 'All %s vitamin D COVID-19 treatment mortality results',
+  })
+  new ForestPlot($('#fig_fpc'), {
+    title: 'All %s vitamin D COVID-19 treatment case results',
+  })
+  new ForestPlot($('#fig_fpv'), {
+    title: 'All %s vitamin D COVID-19 treatment viral clearance result',
+  })
+  new ForestPlot($('#fig_fpe'), {
+    title: 'All %s vitamin D COVID-19 treatment studies with exclusions',
+  })
 
   model.start()
 }

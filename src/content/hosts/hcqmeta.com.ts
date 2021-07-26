@@ -26,9 +26,9 @@ export const initialise = async (): Promise<void> => {
     title: 'All %s hydroxychloroquine COVID-19 hospitalization results',
   })
 
-  // const rctForest = new ForestPlot($('#fig_fpr'), {
-  //   title: 'All %s hydroxychloroquine COVID-19 RCTs',
-  // })
+  const rctForest = new ForestPlot($('#fig_fpr'), {
+    title: 'All %s hydroxychloroquine COVID-19 RCTs',
+  })
 
   new ForestPlot($('#fig_fpre'))
 
@@ -40,9 +40,9 @@ export const initialise = async (): Promise<void> => {
     study.stage?.includes('early'),
   )
 
-  // const rcts = rctForest.allStudies
-  // const notRcts = allStudies.filter((study) => !rcts.includes(study))
-  // new BoxPlot($('#fig_plotsprct'), [rcts, notRcts])
+  const rcts = rctForest.allStudies
+  const notRcts = allStudies.filter((study) => !rcts.includes(study))
+  new BoxPlot($('#fig_plotsprct'), [rcts, notRcts])
 
   new BoxPlot($('#fig_plotsp'), [earlyStudies, allStudies])
 
@@ -71,15 +71,15 @@ export const initialise = async (): Promise<void> => {
 
   new ForestPlot($('#fig_fpe'))
 
-  // const prospective = allStudies.filter(
-  //   (study) =>
-  //     study.features.has(StudyFeature.Prospective) ||
-  //     study.features.has(StudyFeature.RCT),
-  // )
-  // const retrospective = allStudies.filter(
-  //   (study) => !prospective.includes(study),
-  // )
-  // new BoxPlot($('#fig_plotpro'), [prospective, retrospective])
+  const prospective = allStudies.filter(
+    (study) =>
+      study.features.has(StudyFeature.Prospective) ||
+      study.features.has(StudyFeature.RCT),
+  )
+  const retrospective = allStudies.filter(
+    (study) => !prospective.includes(study),
+  )
+  new BoxPlot($('#fig_plotpro'), [prospective, retrospective])
 
   model.start()
 }
