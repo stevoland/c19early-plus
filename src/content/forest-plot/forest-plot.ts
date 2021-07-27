@@ -27,7 +27,6 @@ type RowData = {
 type Row = {
   study: Study
   date: Date
-  isPublished: boolean
   $els: JQuery<HTMLElement>
   effectSize: EffectSize
   treatmentEvents?: number
@@ -443,32 +442,36 @@ export class ForestPlot extends Component {
     // Empty
   }
 
-  onDateChange = (newDate: Date, prevDate: Date): void => {
+  onDateChange = (
+    newDate: Date,
+    prevDate: Date,
+    changed: Array<Study>,
+  ): void => {
     if (!this.initialised) {
       return
     }
+    this.currentDate = newDate
 
-    let requiresUpdate = false
-    this.rows.forEach((row) => {
-      if (newDate < prevDate) {
-        if (row.isPublished && row.date > newDate) {
-          requiresUpdate = true
-          row.$els.each((i, el) => {
-            el.classList.add('hidden')
-          })
-          row.isPublished = false
-        }
-      } else if (!row.isPublished && row.date <= newDate) {
-        requiresUpdate = true
+    const updateRequired = changed.reduce((acc, study: Study) => {
+      const row = this.rows.find((row) => row.study === study)
+      if (!row) {
+        return acc
+      }
+
+      if (study.isPublished) {
         row.$els.each((i, el) => {
           el.classList.remove('hidden')
         })
-        row.isPublished = true
+      } else {
+        row.$els.each((i, el) => {
+          el.classList.add('hidden')
+        })
       }
-    })
 
-    this.currentDate = newDate
-    if (requiresUpdate) {
+      return true
+    }, false)
+
+    if (updateRequired) {
       this.latestStudyDate = newDate
       this.updateUi()
     }
@@ -476,7 +479,7 @@ export class ForestPlot extends Component {
 
   updateUi = (): void => {
     if (this.$title && this.titlePattern) {
-      const totalCount = this.rows.filter((row) => row.isPublished).length
+      const totalCount = this.rows.filter((row) => row.study.isPublished).length
       this.$title.text(sprintf(this.titlePattern, totalCount || ''))
     }
 
@@ -484,7 +487,7 @@ export class ForestPlot extends Component {
       (acc, rows, i) => {
         const counts = rows.reduce(
           (acc, row) => {
-            if (!row.isPublished) {
+            if (!row.study.isPublished) {
               return acc
             }
 
@@ -532,7 +535,7 @@ export class ForestPlot extends Component {
     )
 
     const effectSizes = this.groupedRows.map((rows) =>
-      rows.filter((row) => row.isPublished).map((row) => row.effectSize),
+      rows.filter((row) => row.study.isPublished).map((row) => row.effectSize),
     )
     if (effectSizes.length < this.summaries.length) {
       const allEffectSizes = effectSizes.reduce(

@@ -5,10 +5,8 @@ import { Component } from '../component'
 import { DatedChart } from '../dated-chart'
 import { getStudyByDetailsUrl, Study } from '../studies'
 
-type StudyDate = {
+type StudyData = {
   study: Study
-  date: Date
-  isPublished: boolean
   $el: JQuery<HTMLElement>
   midX: number
 }
@@ -73,8 +71,6 @@ export class BarChart extends Component {
       }
       return {
         study,
-        date: study.date,
-        isPublished: true,
         $el: $([bars[i], labels[i]]),
         midX,
       }
@@ -153,40 +149,43 @@ export class BarChart extends Component {
 
   protected initialised = false
   private $el: JQuery<HTMLElement>
-  private studies: Array<StudyDate>
+  private studies: Array<StudyData>
   private pCurve?: {
     labels: Array<Label>
     spring: rebound.Spring
   }
-  // private pLabels: Array<JQuery<HTMLElement>>
 
   onStart = (): void => {
     // Empty
   }
 
-  onDateChange = (newDate: Date, prevDate: Date): void => {
+  onDateChange = (
+    newDate: Date,
+    prevDate: Date,
+    changed: Array<Study>,
+  ): void => {
     if (!this.initialised) {
       return
     }
 
-    this.studies.forEach((studyDate) => {
-      if (newDate < prevDate) {
-        if (studyDate.isPublished && studyDate.date > newDate) {
-          studyDate.$el.css('opacity', 0)
-          studyDate.isPublished = false
-        }
-        return
+    const updateRequired = changed.reduce((acc, study: Study) => {
+      const studyData = this.studies.find((data) => data.study === study)
+      if (!studyData) {
+        return acc
       }
 
-      if (!studyDate.isPublished && studyDate.date <= newDate) {
-        studyDate.$el.css('opacity', 1)
-        studyDate.isPublished = true
-      }
-    })
+      studyData.$el.css('opacity', study.isPublished ? 1 : 0)
+
+      return true
+    }, false)
+
+    if (!updateRequired) {
+      return
+    }
 
     if (this.pCurve) {
-      const pCurveWidth = this.studies.reduce((acc, studyDate) => {
-        return studyDate.isPublished ? Math.max(acc, studyDate.midX) : acc
+      const pCurveWidth = this.studies.reduce((acc, studyData) => {
+        return studyData.study.isPublished ? Math.max(acc, studyData.midX) : acc
       }, 0)
       this.pCurve.spring.setEndValue(pCurveWidth)
       this.pCurve.labels.forEach(({ $el, x }) => {
@@ -200,6 +199,6 @@ export class BarChart extends Component {
   }
 
   getStudies(): Array<Study> {
-    return this.studies.map((studyDate) => studyDate.study)
+    return this.studies.map((studyData) => studyData.study)
   }
 }

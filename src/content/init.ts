@@ -38,6 +38,8 @@ export const init = async (
 
   const studies = await initialiseStudies(getStudiesIncludedInAnalysis)
 
+  model.setStudies(studies)
+
   new Timeline(studies)
 
   return model

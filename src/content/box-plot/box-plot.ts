@@ -7,13 +7,6 @@ import { DatedChart } from '../dated-chart'
 import { Study } from '../studies'
 import './box-plot.css'
 
-type StudyDate = {
-  study: Study
-  date: Date
-  isPublished: boolean
-  $el: JQuery<HTMLElement>
-}
-
 type GroupedStudies = Array<Array<Study>>
 
 export class BoxPlot extends Component {
@@ -32,7 +25,6 @@ export class BoxPlot extends Component {
 
     const springSystem = new rebound.SpringSystem()
 
-    const studies: Array<StudyDate> = []
     this.grouped = []
     this.groupUi = []
     let error = false
@@ -113,17 +105,12 @@ export class BoxPlot extends Component {
           return
         }
 
-        const studyDate = {
-          study,
-          date: study.date,
-          $el: $point,
-          isPublished: true,
-        }
-
-        studies.push(studyDate)
+        let $els = this.elsByStudy.get(study)
+        $els = $els ? $els.add($point.get(0)) : $point
+        this.elsByStudy.set(study, $els)
 
         this.grouped[i].push({
-          studyDate,
+          study,
           date: study.date,
           x: parseFloat(match[1]),
         })
@@ -144,8 +131,6 @@ export class BoxPlot extends Component {
     this.updateUi()
     $layerSubplot.find('.shapelayer').css('display', 'none')
 
-    this.studies = studies
-
     new DatedChart($el)
     this.initialised = true
   }
@@ -153,7 +138,7 @@ export class BoxPlot extends Component {
   protected initialised = false
   private grouped: Array<
     Array<{
-      studyDate: StudyDate
+      study: Study
       date: Date
       x: number
     }>
@@ -170,37 +155,43 @@ export class BoxPlot extends Component {
     iqrHigher: SVGPathElement
     zeroX: number
   }>
-  private studies: Array<StudyDate> = []
+
+  private elsByStudy: Map<Study, JQuery<HTMLElement>> = new Map()
 
   onStart = (): void => {
     // Empty
   }
 
-  onDateChange = (newDate: Date, prevDate: Date): void => {
+  onDateChange = (
+    newDate: Date,
+    prevDate: Date,
+    changed: Array<Study>,
+  ): void => {
     if (!this.initialised) {
       return
     }
 
-    this.studies.forEach((studyDate) => {
-      if (newDate < prevDate) {
-        if (studyDate.isPublished && studyDate.date > newDate) {
-          studyDate.$el.css('opacity', 0)
-          studyDate.isPublished = false
-        }
-      } else if (!studyDate.isPublished && studyDate.date <= newDate) {
-        studyDate.$el.css('opacity', 1)
-        studyDate.isPublished = true
+    const updateRequired = changed.reduce((acc, study: Study) => {
+      const $el = this.elsByStudy.get(study)
+      if (!$el) {
+        return acc
       }
-    })
 
-    this.updateUi()
+      $el.css('opacity', study.isPublished ? 1 : 0)
+
+      return true
+    }, false)
+
+    if (updateRequired) {
+      this.updateUi()
+    }
   }
 
   private updateUi() {
     this.grouped.forEach((group, i) => {
       const groupUi = this.groupUi[i]
       const studies = group
-        .filter((item) => item.studyDate.isPublished)
+        .filter((item) => item.study.isPublished)
         .map((item) => item.x)
       if (studies.length < 2) {
         groupUi.$marker.css('opacity', 0)

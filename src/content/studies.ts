@@ -40,6 +40,7 @@ export type Study = {
   outcomes?: Array<Outcome>
   primaryOutcome: Outcome
   features: Set<StudyFeature>
+  isPublished: boolean
 }
 
 let studies: Array<Study> = []
@@ -93,6 +94,7 @@ const scrapeStudy = (trs: JQuery<HTMLElement>, url: string) => {
     shortOutcome: outcomeParts[0].trim(),
     primaryOutcome,
     features: new Set(),
+    isPublished: true,
   }
 
   const infoString = trs.find('.ainfo').text()
@@ -178,13 +180,15 @@ const scrapeStudies = (contents: JQuery<HTMLIFrameElement>, url: string) => {
   return studies
 }
 
+type GetStudiesResponse = { url: string; html: string }
+
 export const initialise = (
   getStudiesIncludedInAnalysis: (allStudies: Array<Study>) => Array<Study>,
 ): Promise<Array<Study>> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
       { contentScriptQuery: 'getStudies', hostname: window.location.hostname },
-      ({ url, html }) => {
+      ({ url, html }: GetStudiesResponse) => {
         const iframe = document.createElement('iframe')
         iframe.srcdoc = html
         iframe.style.display = 'none'
