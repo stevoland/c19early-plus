@@ -525,10 +525,12 @@ export class ForestPlot extends Component {
         row.$els.each((i, el) => {
           el.classList.remove('hidden')
         })
+        row.$hitSlop.removeClass('hidden')
       } else {
         row.$els.each((i, el) => {
           el.classList.add('hidden')
         })
+        row.$hitSlop.addClass('hidden')
       }
 
       row.$author
