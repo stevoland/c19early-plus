@@ -38,6 +38,11 @@ class Model extends EventEmitter {
 
     this.emit('dateChange', newDate, prevDate, changed)
   }
+
+  toggleExclusion(study: Study): void {
+    study.isExcluded = !study.isExcluded
+    this.emit('onExclusion', study)
+  }
 }
 
 export const model = new Model()

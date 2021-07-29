@@ -5,6 +5,7 @@ import numeral from 'numeral'
 
 import { Component } from '../component'
 import { DatedChart } from '../dated-chart'
+import { model } from '../model'
 import { getStudyByDetailsUrl, Study } from '../studies'
 
 type GroupedStudies = Array<Array<Study>>
@@ -28,6 +29,11 @@ type Row = {
   study: Study
   date: Date
   $els: JQuery<HTMLElement>
+  $author: JQuery<HTMLElement>
+  $text: JQuery<HTMLElement>
+  $point: JQuery<HTMLElement>
+  $path: JQuery<HTMLElement>
+  $hitSlop: JQuery<SVGPathElement>
   effectSize: EffectSize
   treatmentEvents?: number
   treatmentNumber?: number
@@ -69,6 +75,8 @@ type SummaryCache = {
 type Opts = {
   title?: string
 }
+
+const svgNs = 'http://www.w3.org/2000/svg'
 
 const sprintf = (format: string, ...args: Array<string | number>) => {
   let i = 0
@@ -200,6 +208,13 @@ export class ForestPlot extends Component {
         this.$title = $title
       }
     }
+
+    const $svg = $el.find('svg')
+    const viewBoxParts = $svg.attr('viewBox')?.split(' ')
+    const svgWidth =
+      viewBoxParts && viewBoxParts.length === 4
+        ? parseFloat(viewBoxParts[2]) - parseFloat(viewBoxParts[0])
+        : 700
 
     let error = false
     const summaryYpos: Array<number> = []
@@ -352,6 +367,16 @@ export class ForestPlot extends Component {
 
       const height = parseFloat($rect.attr('height') as string)
 
+      const hitSlop = document.createElementNS(svgNs, 'path')
+      hitSlop.setAttribute(
+        'd',
+        `M0,${position.y}H${svgWidth}V${position.y + height}H0`,
+      )
+      hitSlop.setAttribute('style', `opacity: 0; cursor: not-allowed;`)
+      $svg.find('.layer-above').append(hitSlop)
+      const $hitSlop = $(hitSlop)
+      $hitSlop.on('click', () => model.toggleExclusion(study))
+
       const summaryIndex = summaryYpos.findIndex((y, i) => {
         return y > position.y
       })
@@ -359,6 +384,10 @@ export class ForestPlot extends Component {
 
       const $annotation = $g.closest('.annotation')
       let $els = $($annotation.get())
+      const $author = $($annotation.get())
+      let $text = $()
+      let $point = $()
+      let $path = $()
       $annotation.siblings('.annotation').each((i, el) => {
         const $el = $(el)
         const $pointer = $el.find('.cursor-pointer')
@@ -368,6 +397,7 @@ export class ForestPlot extends Component {
         }
 
         $els = $els.add(el)
+        $text = $text.add(el).css('pointer-events', 'none')
       })
 
       const rowData = getRowData($els)
@@ -377,6 +407,7 @@ export class ForestPlot extends Component {
           return false
         }
         $els = $els.add($points.get(i))
+        $point = $point.add($points.get(i))
         return true
       })
       pathYs.forEach((y, i) => {
@@ -384,6 +415,7 @@ export class ForestPlot extends Component {
           return
         }
         $els = $els.add($paths.get(i))
+        $path = $path.add($paths.get(i))
       })
 
       const row = {
@@ -391,6 +423,11 @@ export class ForestPlot extends Component {
         date: study.date,
         isPublished: true,
         $els,
+        $author,
+        $text,
+        $point,
+        $path,
+        $hitSlop,
         ...rowData,
       }
       this.rows.push(row)
@@ -452,13 +489,39 @@ export class ForestPlot extends Component {
     }
     this.currentDate = newDate
 
-    const updateRequired = changed.reduce((acc, study: Study) => {
-      const row = this.rows.find((row) => row.study === study)
-      if (!row) {
-        return acc
-      }
+    const changedRows = this.changedRows(changed)
 
-      if (study.isPublished) {
+    if (changedRows.length) {
+      this.latestStudyDate = newDate
+      this.updateUi(changedRows)
+    }
+  }
+
+  onExclusion = (changed: Study): void => {
+    const changedRows = this.changedRows([changed])
+
+    if (changedRows.length) {
+      changedRows.forEach((row) => {
+        row.$hitSlop.css(
+          'cursor',
+          row.study.isExcluded ? 'crosshair' : 'not-allowed',
+        )
+      })
+      this.updateUi(changedRows)
+    }
+  }
+
+  changedRows = (changed: Array<Study>): Array<Row> => {
+    return changed.reduce((acc: Array<Row>, study: Study): Array<Row> => {
+      const row = this.rows.find((row) => row.study === study)
+
+      return row ? [...acc, row] : acc
+    }, [])
+  }
+
+  updateUi = (changedRows: Array<Row>): void => {
+    changedRows.forEach((row) => {
+      if (row.study.isPublished) {
         row.$els.each((i, el) => {
           el.classList.remove('hidden')
         })
@@ -468,18 +531,18 @@ export class ForestPlot extends Component {
         })
       }
 
-      return true
-    }, false)
+      row.$author
+        .css('text-decoration', row.study.isExcluded ? 'line-through' : 'none')
+        .css('opacity', row.study.isExcluded ? 0.7 : 1)
+      row.$text.css('opacity', row.study.isExcluded ? 0.3 : 1)
+      row.$point.css('opacity', row.study.isExcluded ? 0.2 : 0.7)
+      row.$path.css('opacity', row.study.isExcluded ? 0.1 : 0.5)
+    })
 
-    if (updateRequired) {
-      this.latestStudyDate = newDate
-      this.updateUi()
-    }
-  }
-
-  updateUi = (): void => {
     if (this.$title && this.titlePattern) {
-      const totalCount = this.rows.filter((row) => row.study.isPublished).length
+      const totalCount = this.rows.filter(
+        (row) => row.study.isPublished && !row.study.isExcluded,
+      ).length
       this.$title.text(sprintf(this.titlePattern, totalCount || ''))
     }
 
@@ -487,7 +550,7 @@ export class ForestPlot extends Component {
       (acc, rows, i) => {
         const counts = rows.reduce(
           (acc, row) => {
-            if (!row.study.isPublished) {
+            if (!row.study.isPublished || row.study.isExcluded) {
               return acc
             }
 
@@ -535,7 +598,9 @@ export class ForestPlot extends Component {
     )
 
     const effectSizes = this.groupedRows.map((rows) =>
-      rows.filter((row) => row.study.isPublished).map((row) => row.effectSize),
+      rows
+        .filter((row) => row.study.isPublished && !row.study.isExcluded)
+        .map((row) => row.effectSize),
     )
     if (effectSizes.length < this.summaries.length) {
       const allEffectSizes = effectSizes.reduce(
@@ -573,6 +638,8 @@ export class ForestPlot extends Component {
   }
 
   updateSummaries = (groupedResults) => {
+    const hasExclusions = this.rows.some((row) => row.study.isExcluded)
+
     groupedResults.forEach((results, i) => {
       if (!results.length) {
         this.summaries[i].$percentEl.text('')
@@ -583,7 +650,11 @@ export class ForestPlot extends Component {
         return
       }
 
-      if (this.finalStudyDate && this.latestStudyDate >= this.finalStudyDate) {
+      if (
+        !hasExclusions &&
+        this.finalStudyDate &&
+        this.latestStudyDate >= this.finalStudyDate
+      ) {
         this.summaries[i].$heterogenicity.html(
           this.summaries[i].finalHeterogenicity,
         )

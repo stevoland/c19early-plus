@@ -8,6 +8,11 @@ export abstract class Component {
       (newDate: Date, prevDate: Date, changed: Array<Study>) =>
         this.onDateChange(newDate, prevDate, changed),
     )
+    model.on('onExclusion', (changed: Study) => {
+      if (this.onExclusion) {
+        this.onExclusion(changed)
+      }
+    })
     model.on('start', () => this.onStart())
   }
 
@@ -20,6 +25,10 @@ export abstract class Component {
   }
 
   abstract onStart = (): void => {
+    //
+  }
+
+  abstract onExclusion = (changed: Study): void => {
     //
   }
 }

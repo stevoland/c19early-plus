@@ -41,6 +41,7 @@ export type Study = {
   primaryOutcome: Outcome
   features: Set<StudyFeature>
   isPublished: boolean
+  isExcluded: boolean
 }
 
 let studies: Array<Study> = []
@@ -95,6 +96,7 @@ const scrapeStudy = (trs: JQuery<HTMLElement>, url: string) => {
     primaryOutcome,
     features: new Set(),
     isPublished: true,
+    isExcluded: false,
   }
 
   const infoString = trs.find('.ainfo').text()

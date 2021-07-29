@@ -3,11 +3,13 @@ import rebound from 'rebound'
 
 import { Component } from '../component'
 import { DatedChart } from '../dated-chart'
+import { model } from '../model'
 import { getStudyByDetailsUrl, Study } from '../studies'
 
 type StudyData = {
   study: Study
-  $el: JQuery<HTMLElement>
+  $bar: JQuery<HTMLElement>
+  $label: JQuery<HTMLElement>
   midX: number
 }
 
@@ -56,7 +58,8 @@ export class BarChart extends Component {
       })
 
     this.studies = studies.map((study, i) => {
-      const d = $(bars[i]).find('path').attr('d')
+      const $bar = $(bars[i])
+      const d = $bar.find('path').attr('d')
       let midX = 0
       if (d) {
         const matchX1 = d.match(/M([\d.]+)/)
@@ -69,9 +72,12 @@ export class BarChart extends Component {
           }
         }
       }
+
+      $bar.css('cursor', 'not-allowed').on('click', () => this.onBarPress(i))
       return {
         study,
-        $el: $([bars[i], labels[i]]),
+        $bar,
+        $label: $(labels[i]),
         midX,
       }
     })
@@ -168,37 +174,81 @@ export class BarChart extends Component {
       return
     }
 
-    const updateRequired = changed.reduce((acc, study: Study) => {
-      const studyData = this.studies.find((data) => data.study === study)
-      if (!studyData) {
-        return acc
-      }
+    const itemsChanged = changed.reduce(
+      (acc: Array<StudyData>, study: Study) => {
+        const item = this.studies.find((data) => data.study === study)
 
-      studyData.$el.css('opacity', study.isPublished ? 1 : 0)
+        return item ? [...acc, item] : acc
+      },
+      [],
+    )
 
-      return true
-    }, false)
-
-    if (!updateRequired) {
+    if (!itemsChanged.length) {
       return
     }
 
-    if (this.pCurve) {
-      const pCurveWidth = this.studies.reduce((acc, studyData) => {
-        return studyData.study.isPublished ? Math.max(acc, studyData.midX) : acc
-      }, 0)
-      this.pCurve.spring.setEndValue(pCurveWidth)
-      this.pCurve.labels.forEach(({ $el, x }) => {
-        if (x <= pCurveWidth + 10) {
-          $el.removeClass('hidden')
-        } else {
-          $el.addClass('hidden')
-        }
-      })
+    this.updateUI(itemsChanged)
+  }
+
+  private updateUI = (itemsChanged: Array<StudyData>) => {
+    itemsChanged.forEach((item) => {
+      item.$bar.css(
+        'opacity',
+        !item.study.isPublished ? 0 : item.study.isExcluded ? 0.2 : 1,
+      )
+      item.$label
+        .css('text-decoration', item.study.isExcluded ? 'line-through' : 'none')
+        .css(
+          'opacity',
+          !item.study.isPublished ? 0 : item.study.isExcluded ? 0.7 : 1,
+        )
+      item.$bar.css(
+        'cursor',
+        item.study.isExcluded ? 'crosshair' : 'not-allowed',
+      )
+    })
+
+    if (!this.pCurve) {
+      return
     }
+
+    const hasExclusions = this.studies.some((item) => item.study.isExcluded)
+    if (hasExclusions) {
+      this.pCurve.spring.setCurrentValue(0)
+      this.pCurve.labels.forEach(({ $el }) => {
+        $el.addClass('hidden')
+      })
+      return
+    }
+
+    const pCurveWidth = this.studies.reduce((acc, studyData) => {
+      return studyData.study.isPublished ? Math.max(acc, studyData.midX) : acc
+    }, 0)
+    this.pCurve.spring.setEndValue(pCurveWidth)
+    this.pCurve.labels.forEach(({ $el, x }) => {
+      if (x <= pCurveWidth + 10) {
+        $el.removeClass('hidden')
+      } else {
+        $el.addClass('hidden')
+      }
+    })
   }
 
   getStudies(): Array<Study> {
     return this.studies.map((studyData) => studyData.study)
+  }
+
+  private onBarPress = (index: number): void => {
+    const study = this.studies[index].study
+    model.toggleExclusion(study)
+  }
+
+  onExclusion = (changed: Study): void => {
+    const items = this.studies.filter((item) => item.study === changed)
+    if (!items.length) {
+      return
+    }
+
+    this.updateUI(items)
   }
 }

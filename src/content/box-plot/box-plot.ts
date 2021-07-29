@@ -71,7 +71,10 @@ export class BoxPlot extends Component {
       medianSpring.addListener({
         onSpringUpdate: function (_spring) {
           const x = _spring.getCurrentValue()
-          $marker.attr('transform', `translate(${x - width / 2},0)`)
+          const fill = x <= svgWidth / 2 ? 'rgb(0, 117, 76)' : 'rgb(158, 11, 0)'
+          $marker
+            .attr('transform', `translate(${x - width / 2},0)`)
+            .css('fill', fill)
         },
       })
       const lowerBar = document.createElementNS(svgNs, 'path')
@@ -128,7 +131,7 @@ export class BoxPlot extends Component {
         .append(ui.lowerBar)
         .append(ui.higherBar)
     })
-    this.updateUi()
+    this.updateUi([])
     $layerSubplot.find('.shapelayer').css('display', 'none')
 
     new DatedChart($el)
@@ -171,27 +174,39 @@ export class BoxPlot extends Component {
       return
     }
 
-    const updateRequired = changed.reduce((acc, study: Study) => {
+    const studiesChanged = changed.reduce((acc: Array<Study>, study: Study) => {
       const $el = this.elsByStudy.get(study)
-      if (!$el) {
-        return acc
-      }
+      return $el ? [...acc, study] : acc
+    }, [])
 
-      $el.css('opacity', study.isPublished ? 1 : 0)
-
-      return true
-    }, false)
-
-    if (updateRequired) {
-      this.updateUi()
+    if (studiesChanged.length) {
+      this.updateUi(studiesChanged)
     }
   }
 
-  private updateUi() {
+  onExclusion = (changed: Study): void => {
+    const $el = this.elsByStudy.get(changed)
+    if (!$el) {
+      return
+    }
+
+    this.updateUi([changed])
+  }
+
+  private updateUi(changed: Array<Study>) {
+    changed.forEach((study) => {
+      const $el = this.elsByStudy.get(study)
+      if (!$el) {
+        return
+      }
+      const opacity = !study.isPublished ? 0 : study.isExcluded ? 0.2 : 1
+      $el.css('opacity', opacity)
+    })
+
     this.grouped.forEach((group, i) => {
       const groupUi = this.groupUi[i]
       const studies = group
-        .filter((item) => item.study.isPublished)
+        .filter((item) => item.study.isPublished && !item.study.isExcluded)
         .map((item) => item.x)
       if (studies.length < 2) {
         groupUi.$marker.css('opacity', 0)
