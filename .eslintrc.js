@@ -20,4 +20,10 @@ module.exports = {
   },
   plugins: ['react', '@typescript-eslint'],
   rules: {},
+  overrides: {
+    files: ['scripts/**/*.*'],
+    rules: {
+      '@typescript-eslint/no-var-requires': 0,
+    },
+  },
 }
