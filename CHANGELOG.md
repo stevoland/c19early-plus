@@ -1,3 +1,13 @@
+## [0.2.1](https://github.com/stevoland/c19early-plus/compare/v0.2.0...v0.2.1) (2021-08-01)
+
+
+### Bug Fixes
+
+* Excluding studies included multiple times in charts, ie: Annweiler2 ([ec420df](https://github.com/stevoland/c19early-plus/commit/ec420dfcaf395fd0cfdadcd3dbdf2b6381c1eac0))
+* Prevent exclusions on bar chart for studies not published yet ([13c11a8](https://github.com/stevoland/c19early-plus/commit/13c11a8aefa197ee62271d7575b5a50c05a8db7d))
+* Spinner with left nav ([78bae76](https://github.com/stevoland/c19early-plus/commit/78bae76bdbd78b6283b5918395206c72888f4abb))
+* Support new left side menu on wide screens ([204721f](https://github.com/stevoland/c19early-plus/commit/204721f9f75bfc75cf5399578ef095d809469358))
+
 # [0.2.0](https://github.com/stevoland/c19early-plus/compare/v0.1.0...v0.2.0) (2021-07-29)
 
 
