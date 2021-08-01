@@ -192,16 +192,17 @@ export class BarChart extends Component {
 
   private updateUI = (itemsChanged: Array<StudyData>) => {
     itemsChanged.forEach((item) => {
-      item.$bar.css(
-        'opacity',
-        !item.study.isPublished ? 0 : item.study.isExcluded ? 0.2 : 1,
-      )
+      if (item.study.isPublished) {
+        item.$bar.removeClass('hidden')
+        item.$label.removeClass('hidden')
+      } else {
+        item.$bar.addClass('hidden')
+        item.$label.addClass('hidden')
+      }
+      item.$bar.css('opacity', item.study.isExcluded ? 0.2 : 1)
       item.$label
         .css('text-decoration', item.study.isExcluded ? 'line-through' : 'none')
-        .css(
-          'opacity',
-          !item.study.isPublished ? 0 : item.study.isExcluded ? 0.7 : 1,
-        )
+        .css('opacity', item.study.isExcluded ? 0.7 : 1)
       item.$bar.css(
         'cursor',
         item.study.isExcluded ? 'crosshair' : 'not-allowed',
