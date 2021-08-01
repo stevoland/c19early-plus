@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "release": "cross-env NODE_ENV=production rollup -c",
+    "release": "semantic-release && cross-env NODE_ENV=production rollup -c",
     "start": "rollup -c -w",
     "test": "jest"
   },
