@@ -1,3 +1,21 @@
+@media only screen and (min-width: 1201px) {
+  .tocb {
+    display: block;
+  }
+
+  .tocb .toc2 {
+    display: none;
+  }
+}
+
+#mainbox {
+  padding-bottom: 50px;
+}
+
+.toc {
+  z-index: 200;
+}
+
 #timeline {
   position: relative;
   box-sizing: border-box;
