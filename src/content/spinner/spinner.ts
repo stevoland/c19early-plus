@@ -9,7 +9,7 @@ export class Spinner extends Component {
     super()
 
     this.$view = $(`<div id="spinner">${svg}</div>`)
-    $('.toc2').append(this.$view)
+    $('.toc').append(this.$view)
   }
 
   private $view: JQuery<HTMLElement>
@@ -19,6 +19,10 @@ export class Spinner extends Component {
   }
 
   onDateChange = (): void => {
+    // Emprt
+  }
+
+  onExclusion = (): void => {
     // Emprt
   }
 }
