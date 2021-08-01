@@ -513,9 +513,9 @@ export class ForestPlot extends Component {
 
   changedRows = (changed: Array<Study>): Array<Row> => {
     return changed.reduce((acc: Array<Row>, study: Study): Array<Row> => {
-      const row = this.rows.find((row) => row.study === study)
+      const rows = this.rows.filter((row) => row.study === study)
 
-      return row ? [...acc, row] : acc
+      return [...acc, ...rows]
     }, [])
   }
 

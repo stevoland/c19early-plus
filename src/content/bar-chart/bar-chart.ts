@@ -176,9 +176,9 @@ export class BarChart extends Component {
 
     const itemsChanged = changed.reduce(
       (acc: Array<StudyData>, study: Study) => {
-        const item = this.studies.find((data) => data.study === study)
+        const items = this.studies.filter((data) => data.study === study)
 
-        return item ? [...acc, item] : acc
+        return [...acc, ...items]
       },
       [],
     )
