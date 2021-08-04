@@ -4,6 +4,7 @@ import rebound from 'rebound'
 
 import { Component } from '../component'
 import { DatedChart } from '../dated-chart'
+import { model } from '../model'
 import { Study } from '../studies'
 import './box-plot.css'
 
@@ -108,6 +109,10 @@ export class BoxPlot extends Component {
           return
         }
 
+        $point
+          .on('mouseover', () => model.showStudy(study))
+          .on('mouseout', () => model.hideStudy())
+
         let $els = this.elsByStudy.get(study)
         $els = $els ? $els.add($point.get(0)) : $point
         this.elsByStudy.set(study, $els)
@@ -199,8 +204,10 @@ export class BoxPlot extends Component {
       if (!$el) {
         return
       }
-      const opacity = !study.isPublished ? 0 : study.isExcluded ? 0.2 : 1
-      $el.css('opacity', opacity)
+      const opacity = study.isExcluded ? 0.2 : 1
+      $el
+        .css('opacity', opacity)
+        .css('display', study.isPublished ? 'block' : 'none')
     })
 
     this.grouped.forEach((group, i) => {

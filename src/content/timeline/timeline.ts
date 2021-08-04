@@ -40,10 +40,12 @@ export class Timeline {
       const day = differenceInDays(study.date, startDate)
       const pc = (day / days) * 100
       const studyEl = $('<div class="study" />')
-      if (study.primaryOutcome.improvementPercent > 0) {
-        studyEl.addClass('lower')
-      } else if (study.primaryOutcome.improvementPercent < 0) {
-        studyEl.addClass('higher')
+      if (study.primaryOutcome) {
+        if (study.primaryOutcome.improvementPercent > 0) {
+          studyEl.addClass('lower')
+        } else if (study.primaryOutcome.improvementPercent < 0) {
+          studyEl.addClass('higher')
+        }
       }
       studyEl.css('left', `${pc}%`)
       $markers.append(studyEl)

@@ -1,0 +1,28 @@
+#study-summary {
+  display: none;
+  background: white;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 10px;
+  border-top: 1px solid #ccc;
+}
+
+#study-summary .author {
+  font-weight: bold;
+}
+
+#study-summary .improvement {
+  font-weight: 500;
+}
+#study-summary .better {
+  color: #1aa677;
+}
+#study-summary .worse {
+  color: #be3b62;
+}
+
+#study-summary .equal {
+  color: #808080;
+}

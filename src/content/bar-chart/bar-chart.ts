@@ -59,6 +59,8 @@ export class BarChart extends Component {
 
     this.studies = studies.map((study, i) => {
       const $bar = $(bars[i])
+        .on('mouseover', () => model.showStudy(study))
+        .on('mouseout', () => model.hideStudy())
       const d = $bar.find('path').attr('d')
       let midX = 0
       if (d) {
@@ -77,7 +79,9 @@ export class BarChart extends Component {
       return {
         study,
         $bar,
-        $label: $(labels[i]),
+        $label: $(labels[i])
+          .on('mouseover', () => model.showStudy(study))
+          .on('mouseout', () => model.hideStudy()),
         midX,
       }
     })

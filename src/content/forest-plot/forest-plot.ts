@@ -367,6 +367,10 @@ export class ForestPlot extends Component {
 
       const height = parseFloat($rect.attr('height') as string)
 
+      $g.on('mouseover', () => model.showStudy(study)).on('mouseout', () =>
+        model.hideStudy(),
+      )
+
       const hitSlop = document.createElementNS(svgNs, 'path')
       hitSlop.setAttribute(
         'd',
@@ -375,7 +379,10 @@ export class ForestPlot extends Component {
       hitSlop.setAttribute('style', `opacity: 0; cursor: not-allowed;`)
       $svg.find('.layer-above').append(hitSlop)
       const $hitSlop = $(hitSlop)
-      $hitSlop.on('click', () => model.toggleExclusion(study))
+      $hitSlop
+        .on('click', () => model.toggleExclusion(study))
+        .on('mouseover', () => model.showStudy(study))
+        .on('mouseout', () => model.hideStudy())
 
       const summaryIndex = summaryYpos.findIndex((y, i) => {
         return y > position.y

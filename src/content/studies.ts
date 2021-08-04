@@ -15,7 +15,7 @@ export enum StudyFeature {
   PSM = 'PSM',
 }
 
-type Outcome = {
+export type Outcome = {
   description: string
   improvementPercent: number
   rr?: number
@@ -38,74 +38,97 @@ export type Study = {
   stage?: string
   shortOutcome?: string
   outcomes?: Array<Outcome>
-  primaryOutcome: Outcome
+  primaryOutcome?: Outcome
   features: Set<StudyFeature>
   isPublished: boolean
   isExcluded: boolean
+  isInAnalysis: boolean
 }
 
 let studies: Array<Study> = []
 
 const scrapeStudy = (trs: JQuery<HTMLElement>, url: string) => {
+  const $author = trs.find('.author').first()
+
+  const infoString = trs.find('.ainfo').text()
+  const summaryString = infoString + ' ' + trs.find('.xsummary').text()
+
+  const infoParts = infoString.split(',')
+  if (infoParts.length <= 1) {
+    return null
+  }
+  const dateString = infoParts[1].trim()
+
+  let date = parse(dateString, 'M/d/y', new Date())
+
+  const titleString = $author.parent().text()
+  const preprintDateMatch = titleString.match(
+    /preprint\s(\d\d?\/\d\d?(\/\d\d?)?)/,
+  )
+  if (preprintDateMatch) {
+    let preprintDateString = preprintDateMatch[1]
+    const dateParts = preprintDateMatch[1].split('/')
+    if (dateParts.length === 2) {
+      preprintDateString = `${preprintDateString}/${format(date, 'yy')}`
+    }
+    date = parse(preprintDateString, 'M/d/yy', new Date())
+  }
+
+  const study: Partial<Study> = {
+    title: trs.find('.xtitle').text().trim(),
+    author: $author.text().trim(),
+    date,
+    detailsUrl: `${url}/${trs.find('.xstage .ul a').first().attr('href')}`,
+    features: new Set(),
+    isPublished: true,
+    isExcluded: false,
+    isInAnalysis: false,
+  }
+
+  const authorMatch = infoString.match(/(\d+) author(s)\b/i)
+  if (authorMatch) {
+    study.numAuthors = parseInt(authorMatch[1], 10)
+  }
+
   const $outcome = trs.find('.outcome')
   const outcomeString = $outcome.text()
   if (!outcomeString) {
-    return null
+    return study
   }
 
   const outcomeParts = outcomeString.split(',')
   if (outcomeParts.length < 3) {
-    return null
+    return study
   }
 
   const percentMatch = outcomeParts[1].match(/([\d]+\.[\d])%/)
   if (!percentMatch) {
-    return
+    return study
+  }
+
+  const stage = trs.find('.stage').text().trim().toLowerCase()
+  if (stage === 'n/a' || stage === 'meta') {
+    return study
+  }
+
+  const xRef = trs.find('.xref').first().text()
+  if (/\bmeta analysis\b/i.test(xRef)) {
+    return study
   }
 
   const signMultiplier = $outcome.find('.worse').length ? -1 : 1
   const improvementPercent = parseFloat(percentMatch[1]) * signMultiplier
   const pValueString = outcomeParts[2].trim().substr(1)
   const pValue = parseFloat(pValueString.substr(1))
-  const primaryOutcome = {
+  study.primaryOutcome = {
     description: outcomeParts[0].trim(),
     improvementPercent,
     pValueString,
     pValue,
   }
+  study.shortOutcome = outcomeParts[0].trim()
 
-  const stage = trs.find('.stage').text().trim().toLowerCase()
-
-  if (stage === 'n/a' || stage === 'meta') {
-    return null
-  }
-
-  const xRef = trs.find('.xref').first().text()
-  if (/\bmeta analysis\b/i.test(xRef)) {
-    return null
-  }
-
-  const $author = trs.find('.author').first()
-
-  const study: Partial<Study> = {
-    title: trs.find('.xtitle').text().trim(),
-    author: $author.text().trim(),
-    detailsUrl: `${url}/${trs.find('.xstage .ul a').first().attr('href')}`,
-    stage,
-    shortOutcome: outcomeParts[0].trim(),
-    primaryOutcome,
-    features: new Set(),
-    isPublished: true,
-    isExcluded: false,
-  }
-
-  const infoString = trs.find('.ainfo').text()
-  const authorMatch = infoString.match(/(\d+) author(s)\b/i)
-  if (authorMatch) {
-    study.numAuthors = parseInt(authorMatch[1], 10)
-  }
-
-  const summaryString = infoString + ' ' + trs.find('.xsummary').text()
+  study.stage = stage
 
   if (/\bnon-randomized\b/i.test(summaryString)) {
     study.features?.add(StudyFeature.Prospective)
@@ -132,24 +155,6 @@ const scrapeStudy = (trs: JQuery<HTMLElement>, url: string) => {
     study.features?.add(StudyFeature.PSM)
   }
 
-  const infoParts = infoString.split(',')
-  const dateString = infoParts[1].trim()
-
-  study.date = parse(dateString, 'M/d/y', new Date())
-
-  const titleString = $author.parent().text()
-  const preprintDateMatch = titleString.match(
-    /preprint\s(\d\d?\/\d\d?(\/\d\d?)?)/,
-  )
-  if (preprintDateMatch) {
-    let preprintDateString = preprintDateMatch[1]
-    const dateParts = preprintDateMatch[1].split('/')
-    if (dateParts.length === 2) {
-      preprintDateString = `${preprintDateString}/${format(study.date, 'yy')}`
-    }
-    study.date = parse(preprintDateString, 'M/d/yy', new Date())
-  }
-
   if (/\bpeer[\s-]?reviewed\b/i.test(xRef)) {
     study.features?.add(StudyFeature.PeerReviewed)
   } else if (/\bpre[-]?print\b/i.test(xRef)) {
@@ -174,7 +179,10 @@ const scrapeStudies = (contents: JQuery<HTMLIFrameElement>, url: string) => {
     }
 
     const study = scrapeStudy(trs, url)
-    if (study) {
+    if (
+      study &&
+      !studies.find(({ detailsUrl }) => detailsUrl === study.detailsUrl)
+    ) {
       studies.push(study as Study)
     }
   })
@@ -196,10 +204,15 @@ export const initialise = (
         iframe.style.display = 'none'
         iframe.onload = () => {
           const contents = $(iframe).contents() as JQuery<HTMLIFrameElement>
-          studies = getStudiesIncludedInAnalysis(scrapeStudies(contents, url))
-
+          studies = scrapeStudies(contents, url)
           studies = sortBy(studies, ['date'])
-          resolve(studies)
+
+          const inAnalysis = sortBy(getStudiesIncludedInAnalysis(studies), [
+            'date',
+          ])
+          inAnalysis.forEach((study) => (study.isInAnalysis = true))
+
+          resolve(inAnalysis)
         }
         document.documentElement.append(iframe)
       },
@@ -209,4 +222,8 @@ export const initialise = (
 
 export const getStudyByDetailsUrl = (url: string): Study | undefined => {
   return studies.find((study) => study.detailsUrl === url)
+}
+
+export const getAllStudies = () => {
+  return studies
 }

@@ -14,6 +14,16 @@ export abstract class Component {
       }
     })
     model.on('start', () => this.onStart())
+    model.on('onShowStudy', (study: Study) => {
+      if (this.onShowStudy) {
+        this.onShowStudy(study)
+      }
+    })
+    model.on('onHideStudy', () => {
+      if (this.onHideStudy) {
+        this.onHideStudy()
+      }
+    })
   }
 
   abstract onDateChange = (
@@ -29,6 +39,14 @@ export abstract class Component {
   }
 
   abstract onExclusion = (changed: Study): void => {
+    //
+  }
+
+  abstract onShowStudy = (study: Study): void => {
+    //
+  }
+
+  abstract onHideStudy = (): void => {
     //
   }
 }

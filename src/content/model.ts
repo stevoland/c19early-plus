@@ -43,6 +43,14 @@ class Model extends EventEmitter {
     study.isExcluded = !study.isExcluded
     this.emit('onExclusion', study)
   }
+
+  showStudy(study: Study): void {
+    this.emit('onShowStudy', study)
+  }
+
+  hideStudy(): void {
+    this.emit('onHideStudy')
+  }
 }
 
 export const model = new Model()

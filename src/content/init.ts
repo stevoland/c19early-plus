@@ -2,12 +2,14 @@ import $ from 'jQuery'
 
 import {
   initialise as initialiseStudies,
+  getAllStudies,
   getStudyByDetailsUrl,
   Study,
 } from './studies'
 import { model } from './model'
 import { Spinner } from './spinner'
 import { Timeline } from './timeline'
+import { StudySummary } from './study-summary'
 
 export const createGetStudiesIncludedInAnalysis =
   (selector: string) => (): Array<Study> => {
@@ -40,7 +42,9 @@ export const init = async (
 
   model.setStudies(studies)
 
+  const allStudies = getAllStudies()
   new Timeline(studies)
+  new StudySummary(allStudies)
 
   return model
 }
