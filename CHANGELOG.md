@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/stevoland/c19early-plus/compare/v0.2.1...v0.3.0) (2021-08-04)
+
+
+### Features
+
+* Add study summary bar ([175abb0](https://github.com/stevoland/c19early-plus/commit/175abb04f82ec2b2f13ac70bda702ef6e7326cb5))
+
 ## [0.2.1](https://github.com/stevoland/c19early-plus/compare/v0.2.0...v0.2.1) (2021-08-01)
 
 
